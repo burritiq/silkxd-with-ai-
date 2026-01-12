@@ -28,6 +28,7 @@ public final class AutoMace extends Module {
     private final BooleanSetting targetPlayers = new BooleanSetting("Target Players", true);
     private final BooleanSetting targetMobs = new BooleanSetting("Target Mobs", false);
     private final BooleanSetting stunSlam = new BooleanSetting("Stun Slam", false);
+    private final BooleanSetting onlyAxe = new BooleanSetting("Only Axe", false);
     private final BooleanSetting autoSwitch = new BooleanSetting("Auto Switch Mace", true);
 
     private final TimerUtil attackTimer = new TimerUtil();
@@ -41,7 +42,7 @@ public final class AutoMace extends Module {
     public AutoMace() {
         super("Auto Mace", "Automatically attacks with mace", -1, Category.COMBAT);
         this.addSettings(minFallDistance, attackDelay, densityThreshold, targetPlayers, targetMobs, stunSlam,
-                autoSwitch);
+                onlyAxe, autoSwitch);
     }
 
     @EventHandler
@@ -112,6 +113,10 @@ public final class AutoMace extends Module {
                 player.isHolding(Items.SHIELD) &&
                 player.isBlocking();
 
+        if (onlyAxe.getValue() && !isAxe(mc.player.getMainHandStack())) {
+            return;
+        }
+
         if (targetBlocking && fallDist > minFallDistance.getValueFloat() && !slamExecuted && slamTick == 0) {
             if (savedSlot == -1)
                 savedSlot = mc.player.getInventory().selectedSlot;
@@ -119,7 +124,7 @@ public final class AutoMace extends Module {
         }
 
         if (slamTick == 1) {
-            int axeSlot = getAxeSlotId();
+            int axeSlot = onlyAxe.getValue() ? mc.player.getInventory().selectedSlot : getAxeSlotId();
             if (axeSlot != -1) {
                 mc.player.getInventory().selectedSlot = axeSlot;
                 ((MinecraftClientAccessor) mc).invokeDoAttack();
