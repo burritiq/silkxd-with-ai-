@@ -32,6 +32,7 @@ public class ESP2D extends Module {
         private final NumberSetting range = new NumberSetting("Range", 10, 200, 64, 5);
         private final ModeSetting boxMode = new ModeSetting("Box Mode", "Full", "Full", "Corners", "Rounded");
         private final BooleanSetting boxSetting = new BooleanSetting("Box", true);
+        private final NumberSetting boxExpand = new NumberSetting("Box Expand", 0, 2, 0, 0.05);
         private final NumberSetting roundRadius = new NumberSetting("Round Radius", 0, 10, 3, 0.5);
         private final BooleanSetting boxFill = new BooleanSetting("Box Fill", false);
         private final NumberSetting fillOpacity = new NumberSetting("Fill Opacity", 0, 255, 80, 5);
@@ -44,7 +45,7 @@ public class ESP2D extends Module {
 
         public ESP2D() {
                 super("2D ESP", "Draws 2D boxes around entities", -1, Category.RENDER);
-                addSettings(targets, showSelf, range, boxMode, boxSetting, roundRadius, boxFill, fillOpacity, healthBar,
+                addSettings(targets, showSelf, range, boxMode, boxSetting, boxExpand, roundRadius, boxFill, fillOpacity, healthBar,
                                 teamColor, boxColor, playerColor, passiveColor, hostileColor);
         }
 
@@ -78,12 +79,12 @@ public class ESP2D extends Module {
                                         * mc.getRenderTickCounter().getTickDelta(false);
 
                         Box expandedBox = new Box(
-                                        box.minX - entity.getX() + x - 0.05,
-                                        box.minY - entity.getY() + y,
-                                        box.minZ - entity.getZ() + z - 0.05,
-                                        box.maxX - entity.getX() + x + 0.05,
-                                        box.maxY - entity.getY() + y + 0.1,
-                                        box.maxZ - entity.getZ() + z + 0.05);
+                                        box.minX - entity.getX() + x - 0.05 - boxExpand.getValue(),
+                                        box.minY - entity.getY() + y - boxExpand.getValue(),
+                                        box.minZ - entity.getZ() + z - 0.05 - boxExpand.getValue(),
+                                        box.maxX - entity.getX() + x + 0.05 + boxExpand.getValue(),
+                                        box.maxY - entity.getY() + y + 0.1 + boxExpand.getValue(),
+                                        box.maxZ - entity.getZ() + z + 0.05 + boxExpand.getValue());
 
                         Vec3d[] vectors = new Vec3d[] {
                                         new Vec3d(expandedBox.minX, expandedBox.minY, expandedBox.minZ),
