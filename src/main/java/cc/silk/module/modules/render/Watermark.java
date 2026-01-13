@@ -10,27 +10,25 @@ import meteordevelopment.orbit.EventHandler;
 import net.minecraft.client.gui.screen.ChatScreen;
 
 import java.awt.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class Watermark extends Module {
-    private final ModeSetting mode = new ModeSetting("Mode", "Simple", "Simple", "Gamesense");
     private final StringSetting text = new StringSetting("Text", "Silk");
-    private final NumberSetting fontSize = new NumberSetting("Font Size", 8, 32, 16, 1);
     private final NumberSetting transparency = new NumberSetting("Transparency", 0, 255, 200, 1);
     private final ModeSetting colorMode = new ModeSetting("Color Mode", "Theme", "Theme", "Custom");
     private final ColorSetting customColor = new ColorSetting("Custom Color", new Color(255, 255, 255));
-    private final BooleanSetting waveAnimation = new BooleanSetting("Wave Animation", false);
-    private final NumberSetting waveSpeed = new NumberSetting("Wave Speed", 0.1, 5.0, 1.5, 0.1);
-    private final NumberSetting waveSpread = new NumberSetting("Wave Spread", 0.1, 5.0, 0.6, 0.1);
 
     private DraggableComponent draggable;
     private boolean needsInitialCenter = true;
 
     private int fpsIcon = -1;
-    private int pingIcon = -1;
+    private int userIcon = -1;
+    private int clockIcon = -1;
 
     public Watermark() {
         super("Watermark", "Displays client watermark", -1, Category.RENDER);
-        addSettings(mode, text, fontSize, transparency, colorMode, customColor, waveAnimation, waveSpeed, waveSpread);
+        addSettings(text, transparency, colorMode, customColor);
     }
 
     @Override
@@ -42,8 +40,11 @@ public class Watermark extends Module {
         if (fpsIcon == -1) {
             fpsIcon = NanoVGRenderer.loadImage("assets/silk/textures/icons/fps.png");
         }
-        if (pingIcon == -1) {
-            pingIcon = NanoVGRenderer.loadImage("assets/silk/textures/icons/ping.png");
+        if (userIcon == -1) {
+            userIcon = NanoVGRenderer.loadImage("assets/silk/textures/icons/user.png");
+        }
+        if (clockIcon == -1) {
+            clockIcon = NanoVGRenderer.loadImage("assets/silk/textures/icons/clock.png");
         }
     }
 
@@ -51,12 +52,12 @@ public class Watermark extends Module {
     private void onRender2D(Render2DEvent event) {
         if (mc.player == null || mc.world == null)
             return;
-        if (text.getValue().isEmpty())
-            return;
+
+        loadIcons();
 
         if (draggable == null) {
             int screenWidth = mc.getWindow().getScaledWidth();
-            draggable = new DraggableComponent(screenWidth / 2f, 10, 200, 30);
+            draggable = new DraggableComponent(screenWidth / 2f, 10, 200, 20);
             needsInitialCenter = true;
         }
 
@@ -65,48 +66,34 @@ public class Watermark extends Module {
             return;
 
         NanoVGRenderer.beginFrame();
-
-        switch (mode.getMode()) {
-            case "Simple" -> renderSimple(isInChat);
-            case "Gamesense" -> renderGamesense(isInChat);
-        }
-
+        render(isInChat);
         NanoVGRenderer.endFrame();
     }
 
-    private void renderSimple(boolean isInChat) {
-        float padding = 8;
-        float titleSize = 14;
-        float infoSize = 11;
-        float spacing = 8;
-        float iconSize = 12;
-        float iconSpacing = 4;
+    private void render(boolean isInChat) {
+        float padding = 6;
+        float textSize = 11;
+        float iconSize = 10;
+        float spacing = 10;
+        float iconTextGap = 3;
 
         String title = text.getValue();
+        String username = mc.player.getName().getString();
+        String time = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"));
         int fps = mc.getCurrentFps();
-
-        int ping = 0;
-        if (mc.getNetworkHandler() != null && mc.player != null) {
-            var playerEntry = mc.getNetworkHandler().getPlayerListEntry(mc.player.getUuid());
-            if (playerEntry != null) {
-                ping = playerEntry.getLatency();
-            }
-        }
-
         String fpsText = String.valueOf(fps);
-        String pingText = ping + "ms";
 
-        float titleWidth = NanoVGRenderer.getTextWidth(title, titleSize);
-        float fpsWidth = iconSize + iconSpacing + NanoVGRenderer.getTextWidth(fpsText, infoSize);
-        float pingWidth = iconSize + iconSpacing + NanoVGRenderer.getTextWidth(pingText, infoSize);
+        float titleWidth = NanoVGRenderer.getTextWidth(title, textSize);
+        float userWidth = iconSize + iconTextGap + NanoVGRenderer.getTextWidth(username, textSize);
+        float timeWidth = iconSize + iconTextGap + NanoVGRenderer.getTextWidth(time, textSize);
+        float fpsWidth = iconSize + iconTextGap + NanoVGRenderer.getTextWidth(fpsText, textSize);
 
-        float titleHeight = NanoVGRenderer.getTextHeight(titleSize);
-        float infoHeight = NanoVGRenderer.getTextHeight(infoSize);
-        float maxHeight = Math.max(titleHeight, Math.max(infoHeight, iconSize));
+        float textHeight = NanoVGRenderer.getTextHeight(textSize);
+        float contentHeight = Math.max(textHeight, iconSize);
 
-        float totalWidth = titleWidth + spacing + fpsWidth + spacing + pingWidth;
+        float totalWidth = titleWidth + spacing + userWidth + spacing + timeWidth + spacing + fpsWidth;
         float bgWidth = totalWidth + padding * 2;
-        float bgHeight = maxHeight + padding * 2;
+        float bgHeight = contentHeight + padding * 2;
 
         draggable.setWidth(bgWidth);
         draggable.setHeight(bgHeight);
@@ -132,96 +119,37 @@ public class Watermark extends Module {
         NanoVGRenderer.drawRoundedRectOutline(x, y, bgWidth, bgHeight, 4f, 1f, borderColor);
 
         float centerY = y + bgHeight / 2f;
+        float textY = centerY - textHeight / 2f;
+        float iconY = centerY - iconSize / 2f - 1;
 
-        float textX = x + padding;
-        float titleY = centerY - titleHeight / 2f;
-
-        Color accentColor = getColor(0);
-        if (waveAnimation.getValue()) {
-            drawWaveText(title, textX, titleY, titleSize, accentColor);
-        } else {
-            NanoVGRenderer.drawText(title, textX, titleY, titleSize, accentColor);
-        }
-
-        textX += titleWidth + spacing;
-
-        float iconY = centerY - iconSize / 2f;
-        if (fpsIcon != -1) {
-            if (waveAnimation.getValue()) {
-                drawWaveIcon(fpsIcon, textX, iconY, iconSize, 0, accentColor);
-            } else {
-                NanoVGRenderer.drawImage(fpsIcon, textX, iconY, iconSize, iconSize, new Color(255, 255, 255, 255));
-            }
-        }
-        textX += iconSize + iconSpacing;
-
-        float infoY = centerY - infoHeight / 2f;
+        Color accentColor = getColor();
         Color infoColor = new Color(200, 200, 200);
-        if (waveAnimation.getValue()) {
-            drawWaveText(fpsText, textX, infoY, infoSize, accentColor, 1);
-        } else {
-            NanoVGRenderer.drawText(fpsText, textX, infoY, infoSize, infoColor);
+        Color iconColor = new Color(255, 255, 255, 255);
+
+        float cursorX = x + padding;
+
+        NanoVGRenderer.drawText(title, cursorX, textY, textSize, accentColor);
+        cursorX += titleWidth + spacing;
+
+        if (userIcon != -1) {
+            NanoVGRenderer.drawImage(userIcon, cursorX, iconY, iconSize, iconSize, iconColor);
         }
+        cursorX += iconSize + iconTextGap;
+        NanoVGRenderer.drawText(username, cursorX, textY, textSize, infoColor);
+        cursorX += NanoVGRenderer.getTextWidth(username, textSize) + spacing;
 
-        textX += NanoVGRenderer.getTextWidth(fpsText, infoSize) + spacing;
-
-        iconY = centerY - iconSize / 2f;
-        if (pingIcon != -1) {
-            if (waveAnimation.getValue()) {
-                int startIndex = 1 + fpsText.length();
-                drawWaveIcon(pingIcon, textX, iconY, iconSize, startIndex, accentColor);
-            } else {
-                NanoVGRenderer.drawImage(pingIcon, textX, iconY, iconSize, iconSize, new Color(255, 255, 255, 255));
-            }
+        if (clockIcon != -1) {
+            NanoVGRenderer.drawImage(clockIcon, cursorX, iconY, iconSize, iconSize, iconColor);
         }
-        textX += iconSize + iconSpacing;
-        if (waveAnimation.getValue()) {
-            int startIndex = 1 + fpsText.length() + 1;
-            drawWaveText(pingText, textX, infoY, infoSize, accentColor, startIndex);
-        } else {
-            NanoVGRenderer.drawText(pingText, textX, infoY, infoSize, infoColor);
+        cursorX += iconSize + iconTextGap;
+        NanoVGRenderer.drawText(time, cursorX, textY, textSize, infoColor);
+        cursorX += NanoVGRenderer.getTextWidth(time, textSize) + spacing;
+
+        if (fpsIcon != -1) {
+            NanoVGRenderer.drawImage(fpsIcon, cursorX, iconY, iconSize, iconSize, iconColor);
         }
-    }
-
-    private void renderGamesense(boolean isInChat) {
-        String fullText = text.getValue() + "sense | release | " + getIP();
-
-        float padding = 6;
-        float size = 12;
-
-        float textWidth = NanoVGRenderer.getTextWidth(fullText, size);
-        float textHeight = NanoVGRenderer.getTextHeight(size);
-        float bgWidth = textWidth + padding * 2;
-        float bgHeight = textHeight + padding * 2;
-
-        draggable.setWidth(bgWidth);
-        draggable.setHeight(bgHeight);
-
-        if (needsInitialCenter) {
-            int screenWidth = mc.getWindow().getScaledWidth();
-            draggable.setX(screenWidth / 2f - bgWidth / 2f);
-            needsInitialCenter = false;
-        }
-
-        if (isInChat) {
-            draggable.update();
-            snapToCenter(bgWidth);
-        }
-
-        float x = draggable.getX();
-        float y = draggable.getY();
-
-        int alpha = (int) transparency.getValue();
-        NanoVGRenderer.drawRoundedRect(x - 1, y - 1, bgWidth + 2, bgHeight + 2, 2f,
-                new Color(96, 96, 96, alpha));
-        NanoVGRenderer.drawRoundedRect(x, y, bgWidth, bgHeight, 2f, new Color(25, 25, 25, alpha));
-
-        Color accentColor = getColor(0);
-        if (waveAnimation.getValue()) {
-            drawWaveText(fullText, x + padding, y + padding, size, accentColor);
-        } else {
-            NanoVGRenderer.drawText(fullText, x + padding, y + padding, size, accentColor);
-        }
+        cursorX += iconSize + iconTextGap;
+        NanoVGRenderer.drawText(fpsText, cursorX, textY, textSize, infoColor);
     }
 
     private void snapToCenter(float width) {
@@ -235,55 +163,10 @@ public class Watermark extends Module {
         }
     }
 
-    private Color getColor(int offset) {
+    private Color getColor() {
         return switch (colorMode.getMode()) {
             case "Custom" -> customColor.getValue();
             default -> cc.silk.module.modules.client.NewClickGUIModule.getAccentColor();
         };
-    }
-
-    private String getIP() {
-        if (mc.world == null)
-            return "NULL";
-        if (mc.isInSingleplayer())
-            return "Singleplayer";
-        return mc.getCurrentServerEntry().address;
-    }
-
-    private void drawWaveText(String s, float x, float y, float size, Color baseColor) {
-        drawWaveText(s, x, y, size, baseColor, 0);
-    }
-
-    private void drawWaveText(String s, float x, float y, float size, Color baseColor, int startIndex) {
-        double time = (System.currentTimeMillis() / 1000.0) * waveSpeed.getValue();
-        float cursorX = x;
-        for (int i = 0; i < s.length(); i++) {
-            String ch = String.valueOf(s.charAt(i));
-            double phase = time + (startIndex + i) * waveSpread.getValue();
-            double waveValue = (Math.sin(phase) + 1.0) * 0.5;
-            double wave = Math.sin(waveValue * Math.PI * 0.5);
-            int waved = applyWaveColor(baseColor.getRGB(), wave);
-            NanoVGRenderer.drawText(ch, cursorX, y, size, new Color(waved, true));
-            cursorX += NanoVGRenderer.getTextWidth(ch, size);
-        }
-    }
-
-    // this aint fucking working properly nigger nigger
-    private void drawWaveIcon(int imageId, float x, float y, float size, int index, Color baseColor) {
-        double time = (System.currentTimeMillis() / 1000.0) * waveSpeed.getValue();
-        double phase = time + index * waveSpread.getValue();
-        double waveValue = (Math.sin(phase) + 1.0) * 0.5;
-        double wave = Math.sin(waveValue * Math.PI * 0.5);
-        int waved = applyWaveColor(baseColor.getRGB(), wave);
-        NanoVGRenderer.drawImage(imageId, x, y, size, size, new Color(waved, true));
-    }
-
-    private int applyWaveColor(int baseColor, double waveValue) {
-        Color base = new Color(baseColor, true);
-        double wave = Math.pow(waveValue, 0.5);
-        int r = (int) (base.getRed() + (255 - base.getRed()) * wave);
-        int g = (int) (base.getGreen() + (255 - base.getGreen()) * wave);
-        int b = (int) (base.getBlue() + (255 - base.getBlue()) * wave);
-        return (base.getAlpha() << 24) | (r << 16) | (g << 8) | b;
     }
 }
