@@ -35,6 +35,30 @@ public class NanoVGDrawing {
         }
     }
 
+    public static void drawRoundedRectVarying(float x, float y, float width, float height, 
+            float radiusTopLeft, float radiusTopRight, float radiusBottomRight, float radiusBottomLeft, Color color) {
+        if (!NanoVGFrameManager.isInFrame() || !NanoVGContext.isValid()) {
+            return;
+        }
+
+        long vg = NanoVGContext.getHandle();
+        nvgSave(vg);
+        try (MemoryStack stack = stackPush()) {
+            NVGColor nvgColor = NVGColor.malloc(stack);
+            nvgColor.r(color.getRed() * INV_255);
+            nvgColor.g(color.getGreen() * INV_255);
+            nvgColor.b(color.getBlue() * INV_255);
+            nvgColor.a(color.getAlpha() * INV_255);
+
+            nvgBeginPath(vg);
+            nvgRoundedRectVarying(vg, x, y, width, height, radiusTopLeft, radiusTopRight, radiusBottomRight, radiusBottomLeft);
+            nvgFillColor(vg, nvgColor);
+            nvgFill(vg);
+        } finally {
+            nvgRestore(vg);
+        }
+    }
+
     public static void drawRoundedRectOutline(float x, float y, float width, float height, float radius,
             float strokeWidth, Color color) {
         if (!NanoVGFrameManager.isInFrame() || !NanoVGContext.isValid()) {

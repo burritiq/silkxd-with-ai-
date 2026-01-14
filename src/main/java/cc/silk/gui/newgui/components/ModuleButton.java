@@ -1,5 +1,6 @@
 package cc.silk.gui.newgui.components;
 
+import cc.silk.gui.newgui.GuiConstants;
 import cc.silk.module.Module;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 
@@ -60,6 +61,10 @@ public class ModuleButton {
     }
 
     public void render(float panelX, float panelY, int mouseX, int mouseY, float alpha) {
+        render(panelX, panelY, mouseX, mouseY, alpha, false);
+    }
+
+    public void render(float panelX, float panelY, int mouseX, int mouseY, float alpha, boolean isLastVisible) {
         if (searchAlpha <= 0.01f)
             return;
 
@@ -75,15 +80,25 @@ public class ModuleButton {
 
         Color accentColor = cc.silk.module.modules.client.NewClickGUIModule.getAccentColor();
 
+        float cornerRadius = isLastVisible ? 4f : 0f;
+
         if (module.isEnabled()) {
             Color enabledBg = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(),
                     (int) (255 * combinedAlpha));
-            NanoVGRenderer.drawRect(x, y, buttonWidth, buttonHeight, enabledBg);
+            if (isLastVisible) {
+                NanoVGRenderer.drawRoundedRectVarying(x, y, buttonWidth, buttonHeight, 0f, 0f, cornerRadius, cornerRadius, enabledBg);
+            } else {
+                NanoVGRenderer.drawRect(x, y, buttonWidth, buttonHeight, enabledBg);
+            }
         } else if (hoverAlpha > 0.01f) {
             float expandedHeight = buttonHeight * hoverAlpha;
             Color hoverBg = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(),
                     (int) (60 * combinedAlpha));
-            NanoVGRenderer.drawRect(x, y, buttonWidth, expandedHeight, hoverBg);
+            if (isLastVisible) {
+                NanoVGRenderer.drawRoundedRectVarying(x, y, buttonWidth, expandedHeight, 0f, 0f, cornerRadius, cornerRadius, hoverBg);
+            } else {
+                NanoVGRenderer.drawRect(x, y, buttonWidth, expandedHeight, hoverBg);
+            }
         }
 
         if (matchesSearch && searchAlpha > 0.9f && !searchQuery.isEmpty()) {
@@ -105,7 +120,7 @@ public class ModuleButton {
 
         float fontSize = 9f;
         float textY = Math.round(y + (buttonHeight - fontSize) / 2f);
-        float textX = Math.round(x + 4);
+        float textX = Math.round(x + GuiConstants.PADDING);
         NanoVGRenderer.drawText(module.getName(), textX, textY, fontSize, textColor);
 
         if (module.getKey() != 0 && module.getKey() != -1) {
@@ -114,7 +129,7 @@ public class ModuleButton {
                 keyName = "[" + keyName + "]";
                 float keybindFontSize = 7f;
                 float keybindWidth = NanoVGRenderer.getTextWidth(keyName, keybindFontSize);
-                float keybindX = Math.round(x + buttonWidth - keybindWidth - 4);
+                float keybindX = Math.round(x + buttonWidth - keybindWidth - GuiConstants.PADDING);
                 float keybindY = Math.round(y + (buttonHeight - keybindFontSize) / 2f);
 
                 Color keybindColor = new Color(

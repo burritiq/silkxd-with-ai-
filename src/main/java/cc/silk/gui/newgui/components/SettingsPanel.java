@@ -1,5 +1,6 @@
 package cc.silk.gui.newgui.components;
 
+import cc.silk.gui.newgui.GuiConstants;
 import cc.silk.module.Module;
 import cc.silk.module.setting.*;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
@@ -16,7 +17,7 @@ public class SettingsPanel {
     private static final float CORNER_RADIUS = 4f;
     private static final int SETTING_HEIGHT = 16;
     private static final int NUMBER_SETTING_HEIGHT = 22;
-    private static final int PADDING = 5;
+    private static final int PADDING = GuiConstants.PADDING;
     private final Module module;
     private final int width = 160;
     private float targetX, currentX, y;
@@ -741,6 +742,10 @@ public class SettingsPanel {
 
     public boolean isVisible() {
         return visible;
+    }
+
+    public Module getModule() {
+        return module;
     }
 
     public boolean isAnimating() {

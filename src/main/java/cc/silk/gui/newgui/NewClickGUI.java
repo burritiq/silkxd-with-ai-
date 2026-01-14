@@ -327,6 +327,9 @@ public class NewClickGUI extends Screen {
 
     @Override
     public void close() {
+        for (CategoryPanel panel : panels) {
+            panel.saveState();
+        }
         closing = true;
     }
 

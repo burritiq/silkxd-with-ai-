@@ -7,6 +7,7 @@ import cc.silk.module.Module;
 import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.NumberSetting;
 import cc.silk.utils.render.DraggableComponent;
+import cc.silk.utils.render.blur.BlurRenderer;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import meteordevelopment.orbit.EventHandler;
@@ -16,8 +17,10 @@ import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.util.DefaultSkinHelper;
 import net.minecraft.client.util.SkinTextures;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 
@@ -36,6 +39,10 @@ public final class TargetHUD extends Module {
     private static final float CORNER_RADIUS = 12f;
 
     private final NumberSetting transparency = new NumberSetting("Transparency", 0, 255, 200, 5);
+    private final BooleanSetting blur = new BooleanSetting("Blur", true);
+    private final NumberSetting blurRadius = new NumberSetting("Blur Radius", 1, 30, 12, 1);
+    private final BooleanSetting showArmor = new BooleanSetting("Show Armor", true);
+    private final BooleanSetting showHeldItem = new BooleanSetting("Show Item", true);
     private final BooleanSetting particles = new BooleanSetting("Particles", true);
     private final NumberSetting particleCount = new NumberSetting("Particle Count", 5, 30, 15, 1);
 
@@ -48,7 +55,7 @@ public final class TargetHUD extends Module {
     public TargetHUD() {
         super("Target HUD", "Displays information about the current combat target", -1, Category.RENDER);
         this.draggable = new DraggableComponent(20, 100, BOX_WIDTH, BOX_HEIGHT);
-        addSettings(transparency, particles, particleCount);
+        addSettings(transparency, blur, blurRadius, showArmor, showHeldItem, particles, particleCount);
     }
 
     @EventHandler
@@ -66,16 +73,40 @@ public final class TargetHUD extends Module {
         float x = draggable.getX();
         float y = draggable.getY();
 
+        int itemCount = 0;
+        if (target != null) {
+            if (showHeldItem.getValue() && !target.getMainHandStack().isEmpty()) itemCount++;
+            if (showArmor.getValue()) {
+                if (!target.getEquippedStack(EquipmentSlot.HEAD).isEmpty()) itemCount++;
+                if (!target.getEquippedStack(EquipmentSlot.CHEST).isEmpty()) itemCount++;
+                if (!target.getEquippedStack(EquipmentSlot.LEGS).isEmpty()) itemCount++;
+                if (!target.getEquippedStack(EquipmentSlot.FEET).isEmpty()) itemCount++;
+            }
+        }
+
+        int dynamicWidth = BOX_WIDTH + (itemCount > 0 ? (itemCount * 14) + 4 : 0);
+        int dynamicHeight = BOX_HEIGHT;
+
+        if (blur.getValue()) {
+            BlurRenderer.drawBlur(
+                    event.getContext().getMatrices(),
+                    x, y, dynamicWidth, dynamicHeight,
+                    CORNER_RADIUS,
+                    Color.WHITE,
+                    (float) blurRadius.getValue()
+            );
+        }
+
         NanoVGRenderer.beginFrame();
 
         int alpha = transparency.getValueInt();
         int dragAlpha = Math.min(255, alpha + 30);
-        Color bgColor = draggable.isDragging() ? new Color(30, 30, 35, dragAlpha) : new Color(20, 20, 25, alpha);
-        NanoVGRenderer.drawRoundedRect(x, y, BOX_WIDTH, BOX_HEIGHT, CORNER_RADIUS, bgColor);
+        Color bgColor = draggable.isDragging() ? new Color(30, 30, 35, dragAlpha) : new Color(20, 20, 25, blur.getValue() ? alpha / 2 : alpha);
+        NanoVGRenderer.drawRoundedRect(x, y, dynamicWidth, dynamicHeight, CORNER_RADIUS, bgColor);
 
         if (draggable.isDragging()) {
             Color accentColor = cc.silk.module.modules.client.NewClickGUIModule.getAccentColor();
-            NanoVGRenderer.drawRoundedRectOutline(x, y, BOX_WIDTH, BOX_HEIGHT, CORNER_RADIUS, 2f, accentColor);
+            NanoVGRenderer.drawRoundedRectOutline(x, y, dynamicWidth, dynamicHeight, CORNER_RADIUS, 2f, accentColor);
         }
 
         float headX = x + PADDING;
@@ -134,6 +165,48 @@ public final class TargetHUD extends Module {
         }
 
         NanoVGRenderer.endFrame();
+
+        if (target != null && (showArmor.getValue() || showHeldItem.getValue())) {
+            renderEquipment(event.getContext(), target, x + BOX_WIDTH - 2, y);
+        }
+    }
+
+    private void renderEquipment(DrawContext context, PlayerEntity target, float startX, float hudY) {
+        float itemX = startX;
+        float itemY = hudY + (BOX_HEIGHT - 14) / 2f;
+        int itemSize = 14;
+        int spacing = 0;
+
+        if (showHeldItem.getValue()) {
+            ItemStack heldItem = target.getMainHandStack();
+            if (!heldItem.isEmpty()) {
+                context.getMatrices().push();
+                context.getMatrices().translate(itemX, itemY, 0);
+                context.getMatrices().scale(0.875f, 0.875f, 1f);
+                context.drawItem(heldItem, 0, 0);
+                context.getMatrices().pop();
+                itemX += itemSize + spacing;
+            }
+        }
+
+        if (showArmor.getValue()) {
+            ItemStack helmet = target.getEquippedStack(EquipmentSlot.HEAD);
+            ItemStack chestplate = target.getEquippedStack(EquipmentSlot.CHEST);
+            ItemStack leggings = target.getEquippedStack(EquipmentSlot.LEGS);
+            ItemStack boots = target.getEquippedStack(EquipmentSlot.FEET);
+
+            ItemStack[] armor = {helmet, chestplate, leggings, boots};
+            for (ItemStack piece : armor) {
+                if (!piece.isEmpty()) {
+                    context.getMatrices().push();
+                    context.getMatrices().translate(itemX, itemY, 0);
+                    context.getMatrices().scale(0.875f, 0.875f, 1f);
+                    context.drawItem(piece, 0, 0);
+                    context.getMatrices().pop();
+                    itemX += itemSize + spacing;
+                }
+            }
+        }
     }
 
     @EventHandler
@@ -274,8 +347,7 @@ public final class TargetHUD extends Module {
 
         MatrixStack matrices = context.getMatrices();
         matrices.push();
-        
-        // this aint working gang :Sob:
+
         NanoVGRenderer.save();
         NanoVGRenderer.scissor(x, y, HEAD_SIZE, HEAD_SIZE);
 
@@ -304,5 +376,4 @@ public final class TargetHUD extends Module {
         }
         return textures.texture();
     }
-
 }

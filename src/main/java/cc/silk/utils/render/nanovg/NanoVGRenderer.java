@@ -32,6 +32,11 @@ public class NanoVGRenderer {
         NanoVGDrawing.drawRoundedRect(x, y, width, height, radius, color);
     }
 
+    public static void drawRoundedRectVarying(float x, float y, float width, float height,
+            float radiusTopLeft, float radiusTopRight, float radiusBottomRight, float radiusBottomLeft, Color color) {
+        NanoVGDrawing.drawRoundedRectVarying(x, y, width, height, radiusTopLeft, radiusTopRight, radiusBottomRight, radiusBottomLeft, color);
+    }
+
     public static void drawRoundedRectOutline(float x, float y, float width, float height, float radius,
             float strokeWidth, Color color) {
         NanoVGDrawing.drawRoundedRectOutline(x, y, width, height, radius, strokeWidth, color);

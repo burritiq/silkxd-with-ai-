@@ -1,5 +1,6 @@
 package cc.silk.gui.newgui.components;
 
+import cc.silk.gui.newgui.GuiConstants;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
@@ -51,13 +52,53 @@ public class CategoryPanel {
 
     private Module hoveredModule = null;
 
+    private static Module lastOpenSettingsModule = null;
+    private static final java.util.Map<Category, float[]> lastPanelPositions = new java.util.HashMap<>();
+
     public CategoryPanel(Category category, float x, float y, int width) {
         this.category = category;
-        this.x = x;
-        this.y = y;
         this.width = width;
 
+        float[] savedPos = lastPanelPositions.get(category);
+        if (savedPos != null) {
+            this.x = savedPos[0];
+            this.y = savedPos[1];
+        } else {
+            this.x = x;
+            this.y = y;
+        }
+
         initModules();
+        restoreSettingsPanel();
+    }
+
+    private void restoreSettingsPanel() {
+        if (lastOpenSettingsModule != null && lastOpenSettingsModule.getModuleCategory() == category) {
+            for (int i = 0; i < moduleButtons.size(); i++) {
+                ModuleButton button = moduleButtons.get(i);
+                if (button.getModule() == lastOpenSettingsModule && button.getModule().getSettings().size() > 1) {
+                    float moduleY = y + HEADER_HEIGHT + (i * MODULE_HEIGHT);
+                    float settingsX = x + width + 5;
+                    settingsPanelSourceY = moduleY;
+                    settingsPanel = new SettingsPanel(button.getModule(), settingsX, moduleY);
+                    settingsPanel.show(settingsX, moduleY);
+                    break;
+                }
+            }
+        }
+    }
+
+    public void saveState() {
+        lastPanelPositions.put(category, new float[]{x, y});
+        if (settingsPanel != null && settingsPanel.isVisible()) {
+            lastOpenSettingsModule = settingsPanel.getModule();
+        } else if (lastOpenSettingsModule != null && lastOpenSettingsModule.getModuleCategory() == category) {
+            lastOpenSettingsModule = null;
+        }
+    }
+
+    public static void clearLastOpenSettings() {
+        lastOpenSettingsModule = null;
     }
 
     private void initModules() {
@@ -124,9 +165,9 @@ public class CategoryPanel {
         String categoryName = category.getName();
         float fontSize = 10f;
         float iconSize = CategoryIcon.getIconSize();
-        float iconX = Math.round(x + 6);
+        float iconX = Math.round(x + GuiConstants.PADDING);
         float iconY = Math.round(y + (HEADER_HEIGHT - iconSize) / 2f);
-        float textX = Math.round(x + 6 + iconSize + 4);
+        float textX = Math.round(x + GuiConstants.PADDING + iconSize + 4);
         float textY = Math.round(y + (HEADER_HEIGHT - fontSize) / 2f);
 
         Color accentColor = getAccentColor();
@@ -145,9 +186,19 @@ public class CategoryPanel {
 
             Module newHoveredModule = null;
 
+            int visibleIndex = 0;
+            int totalVisible = 0;
             for (ModuleButton button : moduleButtons) {
                 if (button.getSearchAlpha() > 0.01f) {
-                    button.render(x, moduleY, mouseX, mouseY, moduleAlpha);
+                    totalVisible++;
+                }
+            }
+
+            for (ModuleButton button : moduleButtons) {
+                if (button.getSearchAlpha() > 0.01f) {
+                    visibleIndex++;
+                    boolean isLastVisible = visibleIndex == totalVisible;
+                    button.render(x, moduleY, mouseX, mouseY, moduleAlpha, isLastVisible);
 
                     if (mouseX >= x && mouseX <= x + width &&
                             mouseY >= moduleY && mouseY <= moduleY + MODULE_HEIGHT) {
