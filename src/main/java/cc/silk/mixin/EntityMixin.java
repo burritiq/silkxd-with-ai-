@@ -1,5 +1,6 @@
 package cc.silk.mixin;
 
+import cc.silk.module.modules.render.CustomOutlineESP;
 import cc.silk.module.modules.render.OutlineESP;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
@@ -24,14 +25,22 @@ public abstract class EntityMixin {
 
     @Inject(method = "isGlowing", at = @At("HEAD"), cancellable = true)
     private void onIsGlowing(CallbackInfoReturnable<Boolean> cir) {
+        Entity self = (Entity) (Object) this;
+        
         OutlineESP outlineESP = OutlineESP.getInstance();
         if (outlineESP != null && outlineESP.isEnabled()) {
-            Entity self = (Entity) (Object) this;
             if (outlineESP.shouldEntityGlow(self)) {
+                cir.setReturnValue(true);
+                return;
+            }
+        }
+        
+        CustomOutlineESP customOutlineESP = CustomOutlineESP.getInstance();
+        if (customOutlineESP != null && customOutlineESP.isEnabled()) {
+            if (customOutlineESP.shouldRenderOutline(self)) {
                 cir.setReturnValue(true);
             }
         }
-       
     }
 
     @Inject(method = "getTeamColorValue", at = @At("HEAD"))
