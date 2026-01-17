@@ -8,8 +8,10 @@
     "EntityMixin",
     "ExampleMixin",
     "GameRendererMixin",
+    "HandledScreenAccessor",
     "HandledScreenMixin",
     "InGameHudMixin",
+    "KeybindingMixin",
     "KeyboardMixin",
     "LivingEntityMixin",
     "MinecraftClientAccessor",
@@ -21,13 +23,10 @@
     "ProjectileUtilMixin",
     "ScreenMixin",
     "WindowMixin",
+    "WorldRendererAccessor",
     "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
-  },
-  "client": [
-    "HandledScreenAccessor",
-    "WorldRendererAccessor"
-  ]
+  }
 }

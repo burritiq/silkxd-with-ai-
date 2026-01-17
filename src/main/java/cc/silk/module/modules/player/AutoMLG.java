@@ -43,7 +43,6 @@ public final class AutoMLG extends Module {
         if (mc.player.isOnGround()) return;
         if (mc.player.isTouchingWater()) return;
         if (mc.player.fallDistance < fallDistance.getValue()) return;
-        if (mc.player.getVelocity().y >= -0.6) return;
         if (!InventoryUtil.hasItem(Items.WATER_BUCKET)) return;
         storedSlot = mc.player.getInventory().selectedSlot;
         storedPitch = mc.player.getPitch();
