@@ -97,8 +97,6 @@ public final class TargetHUD extends Module {
             );
         }
 
-        NanoVGRenderer.beginFrame();
-
         int alpha = transparency.getValueInt();
         int dragAlpha = Math.min(255, alpha + 30);
         Color bgColor = draggable.isDragging() ? new Color(30, 30, 35, dragAlpha) : new Color(20, 20, 25, blur.getValue() ? alpha / 2 : alpha);
@@ -113,14 +111,6 @@ public final class TargetHUD extends Module {
         float headY = y + PADDING;
 
         renderPlayerHeadCircle(headX, headY);
-
-        NanoVGRenderer.endFrame();
-
-        if (target != null) {
-            renderPlayerHead(event.getContext(), target, (int) headX, (int) headY);
-        }
-
-        NanoVGRenderer.beginFrame();
 
         float barX = headX + HEAD_SIZE + PADDING;
         float barY = y + PADDING + 6;
@@ -164,7 +154,9 @@ public final class TargetHUD extends Module {
             renderParticles(event.getContext().getScaledWindowWidth(), event.getContext().getScaledWindowHeight());
         }
 
-        NanoVGRenderer.endFrame();
+        if (target != null) {
+            renderPlayerHead(event.getContext(), target, (int) headX, (int) headY);
+        }
 
         if (target != null && (showArmor.getValue() || showHeldItem.getValue())) {
             renderEquipment(event.getContext(), target, x + BOX_WIDTH - 2, y);
@@ -348,8 +340,7 @@ public final class TargetHUD extends Module {
         MatrixStack matrices = context.getMatrices();
         matrices.push();
 
-        NanoVGRenderer.save();
-        NanoVGRenderer.scissor(x, y, HEAD_SIZE, HEAD_SIZE);
+        context.enableScissor(x, y, x + HEAD_SIZE, y + HEAD_SIZE);
 
         matrices.translate(x, y, 0);
         float scale = HEAD_SIZE / 8.0f;
@@ -361,8 +352,7 @@ public final class TargetHUD extends Module {
         context.drawTexture(RenderLayer::getGuiTextured, texture, 0, 0, 40f, 8f, 8, 8, 64, 64);
         RenderSystem.disableBlend();
 
-        NanoVGRenderer.resetScissor();
-        NanoVGRenderer.restore();
+        context.disableScissor();
 
         matrices.pop();
     }

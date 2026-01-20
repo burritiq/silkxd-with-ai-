@@ -43,9 +43,7 @@ public class Notifications extends Module {
         }
 
         updateNotifications(notifications);
-        NanoVGRenderer.beginFrame();
         renderNotifications(event.getWidth(), event.getHeight(), notifications);
-        NanoVGRenderer.endFrame();
     }
 
     private void updateNotifications(List<Notification> notifications) {

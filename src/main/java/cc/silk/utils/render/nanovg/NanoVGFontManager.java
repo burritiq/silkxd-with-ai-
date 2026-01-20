@@ -30,33 +30,48 @@ public class NanoVGFontManager {
     private static final long FONT_CACHE_TIME = 1000;
 
     public static void loadFonts() {
-        NanoVGContext.assertValid();
         try {
-            regularFont = loadFont("inter", "assets/silk/fonts/Inter.ttf");
-            boldFont = loadFont("inter-bold", "assets/silk/fonts/Inter.ttf");
-            jetbrainsFont = loadFont("jetbrains", "assets/silk/fonts/JetbrainsMono.ttf");
-            poppinsFont = loadFont("poppins", "assets/silk/fonts/Poppins-Medium.ttf");
-            monacoFont = loadFont("monaco", "assets/silk/fonts/monaco.ttf");
+            long vg = NVGRenderer.getContext();
+            
+            if (vg == 0) {
+                System.err.println("[NanoVGFontManager] Error: VG context is 0, cannot load fonts!");
+                return;
+            }
+            
+            System.out.println("[NanoVGFontManager] Loading fonts with VG context: " + vg);
+            
+            regularFont = loadFont("inter", "assets/silk/fonts/Inter.ttf", vg);
+            boldFont = loadFont("inter-bold", "assets/silk/fonts/Inter.ttf", vg);
+            jetbrainsFont = loadFont("jetbrains", "assets/silk/fonts/JetbrainsMono.ttf", vg);
+            poppinsFont = loadFont("poppins", "assets/silk/fonts/Poppins-Medium.ttf", vg);
+            monacoFont = loadFont("monaco", "assets/silk/fonts/monaco.ttf", vg);
 
             try {
-                iconFont = loadFont("fa-solid", "assets/silk/fonts/font awesome 7 freesolid900.otf");
+                iconFont = loadFont("fa-solid", "assets/silk/fonts/font awesome 7 freesolid900.otf", vg);
             } catch (Exception e) {
+                System.err.println("[NanoVGFontManager] Failed to load icon font: " + e.getMessage());
                 iconFont = regularFont;
             }
 
             if (regularFont == -1) {
+                System.err.println("[NanoVGFontManager] Warning: Regular font failed to load, setting to 0");
                 regularFont = 0;
             }
             if (boldFont == -1) {
+                System.err.println("[NanoVGFontManager] Warning: Bold font failed to load, using regular");
                 boldFont = regularFont;
             }
+            
+            System.out.println("[NanoVGFontManager] Fonts loaded - Regular: " + regularFont + ", Bold: " + boldFont + ", Poppins: " + poppinsFont);
         } catch (Exception e) {
+            System.err.println("[NanoVGFontManager] Error loading fonts: " + e.getMessage());
+            e.printStackTrace();
             regularFont = 0;
             boldFont = 0;
         }
     }
 
-    private static int loadFont(String name, String path) throws Exception {
+    private static int loadFont(String name, String path, long vg) throws Exception {
         InputStream is = NanoVGFontManager.class.getClassLoader().getResourceAsStream(path);
         if (is == null) {
             is = Thread.currentThread().getContextClassLoader().getResourceAsStream(path);
@@ -66,13 +81,13 @@ public class NanoVGFontManager {
         }
 
         try {
-            return createFontFromStream(name, is);
+            return createFontFromStream(name, is, vg);
         } finally {
             is.close();
         }
     }
 
-    private static int createFontFromStream(String name, InputStream is) throws Exception {
+    private static int createFontFromStream(String name, InputStream is, long vg) throws Exception {
         ReadableByteChannel rbc = Channels.newChannel(is);
         ByteBuffer buffer = MemoryUtil.memAlloc(8192);
 
@@ -88,7 +103,7 @@ public class NanoVGFontManager {
             }
 
             buffer.flip();
-            int font = nvgCreateFontMem(NanoVGContext.getHandle(), name, buffer, false);
+            int font = nvgCreateFontMem(vg, name, buffer, false);
 
             if (font == -1) {
                 MemoryUtil.memFree(buffer);

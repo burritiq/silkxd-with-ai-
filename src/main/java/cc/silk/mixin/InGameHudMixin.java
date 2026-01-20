@@ -23,9 +23,13 @@ public class InGameHudMixin {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.disableCull();
+    
+        cc.silk.utils.render.nanovg.NanoVGRenderer.beginFrame();
         
         SilkClient.INSTANCE.getSilkEventBus()
                 .post(new Render2DEvent(context, context.getScaledWindowWidth(), context.getScaledWindowHeight()));
+        
+        cc.silk.utils.render.nanovg.NanoVGRenderer.endFrame();
         
         RenderSystem.enableDepthTest();
         RenderSystem.enableCull();

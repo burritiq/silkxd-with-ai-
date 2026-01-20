@@ -65,9 +65,7 @@ public class Watermark extends Module {
         if (mc.currentScreen != null && !isInChat)
             return;
 
-        NanoVGRenderer.beginFrame();
         render(isInChat);
-        NanoVGRenderer.endFrame();
     }
 
     private void render(boolean isInChat) {
