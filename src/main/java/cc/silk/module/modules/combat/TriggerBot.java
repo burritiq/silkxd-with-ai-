@@ -142,7 +142,16 @@ public final class TriggerBot extends Module {
 
         if (waitingForReaction && timerReactionTime.hasElapsedTime(currentReactionDelay, true)) {
             if (critMode.getMode().equals("Strict")) {
-                if (!mc.player.isOnGround() && !mc.player.isClimbing()) {
+                boolean cannotCrit = mc.player.isClimbing() || 
+                                     mc.player.isTouchingWater() || 
+                                     mc.player.isSubmergedInWater() ||
+                                     mc.world.getBlockState(mc.player.getBlockPos()).isOf(Blocks.COBWEB); // really wasnt that hard graph :Sob:                
+                if (cannotCrit) {
+                    if (hasElapsedDelay() && hasTarget(target) && samePlayerCheck(target)) {
+                        attack();
+                        waitingForReaction = false;
+                    }
+                } else if (!mc.player.isOnGround() && !mc.player.isClimbing()) {
                     if (canCrit() && mc.player.getAttackCooldownProgress(0.0f) >= swordThreshold.getMinValue()) {
                         if (hasTarget(target) && samePlayerCheck(target)) {
                             attack();
