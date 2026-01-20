@@ -22,7 +22,6 @@
     "PlayerEntityMixin",
     "ProjectileUtilMixin",
     "ScreenMixin",
-    "WindowMixin",
     "WorldRendererAccessor",
     "WorldRendererMixin"
   ],
