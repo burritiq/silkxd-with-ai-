@@ -4,7 +4,6 @@ import cc.silk.gui.newgui.GuiConstants;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
-import cc.silk.utils.render.shader.ShaderRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
 import cc.silk.utils.render.blur.BlurRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -157,12 +156,11 @@ public class CategoryPanel {
                 panelAlpha);
         Color borderColor = new Color(40, 40, 46, panelAlpha);
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, x, y, width, totalHeight, CORNER_RADIUS, panelBg);
-        ShaderRenderer.drawOutline(matrices, x, y, width, totalHeight, CORNER_RADIUS, borderColor, 1f);
+        NanoVGRenderer.drawRoundedRect(x, y, width, totalHeight, CORNER_RADIUS, panelBg);
+        NanoVGRenderer.drawRoundedRectOutline(x, y, width, totalHeight, CORNER_RADIUS, 1f, borderColor);
 
-        ShaderRenderer.drawRect(matrices, x, y, width, HEADER_HEIGHT, CORNER_RADIUS, headerColor);
-        ShaderRenderer.drawRect(matrices, x, y + HEADER_HEIGHT - CORNER_RADIUS, width, CORNER_RADIUS, 0, headerColor);
+        NanoVGRenderer.drawRoundedRect(x, y, width, HEADER_HEIGHT, CORNER_RADIUS, headerColor);
+        NanoVGRenderer.drawRect(x, y + HEADER_HEIGHT - CORNER_RADIUS, width, CORNER_RADIUS, headerColor);
 
         String categoryName = category.getName();
         float fontSize = 10f;
@@ -222,7 +220,7 @@ public class CategoryPanel {
 
                 Color scrollbarColor = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(),
                         (int) (150 * alpha * expandProgress));
-                ShaderRenderer.drawRect(matrices, x + width - SCROLLBAR_WIDTH - 2, scrollbarY, SCROLLBAR_WIDTH,
+                NanoVGRenderer.drawRoundedRect(x + width - SCROLLBAR_WIDTH - 2, scrollbarY, SCROLLBAR_WIDTH,
                         scrollbarHeight, SCROLLBAR_WIDTH / 2f, scrollbarColor);
             }
         }

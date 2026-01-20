@@ -4,10 +4,8 @@ import cc.silk.gui.newgui.GuiConstants;
 import cc.silk.module.Module;
 import cc.silk.module.setting.*;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
-import cc.silk.utils.render.shader.ShaderRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.util.math.MatrixStack;
 
 import java.awt.*;
 
@@ -137,12 +135,11 @@ public class SettingsPanel {
         Color separatorColor = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(),
                 (int) (80 * renderAlpha));
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, currentX, y, width, height, CORNER_RADIUS, panelBg);
-        ShaderRenderer.drawOutline(matrices, currentX, y, width, height, CORNER_RADIUS, borderColor, 1f);
+        NanoVGRenderer.drawRoundedRect(currentX, y, width, height, CORNER_RADIUS, panelBg);
+        NanoVGRenderer.drawRoundedRectOutline(currentX, y, width, height, CORNER_RADIUS, 1f, borderColor);
 
-        ShaderRenderer.drawRect(matrices, currentX, y, width, HEADER_HEIGHT, CORNER_RADIUS, headerBg);
-        ShaderRenderer.drawRect(matrices, currentX, y + HEADER_HEIGHT, width, 1, 0, separatorColor);
+        NanoVGRenderer.drawRoundedRect(currentX, y, width, HEADER_HEIGHT, CORNER_RADIUS, headerBg);
+        NanoVGRenderer.drawRect(currentX, y + HEADER_HEIGHT, width, 1, separatorColor);
 
         Color textColor = new Color(240, 240, 245, panelAlpha);
         float fontSize = 11f;
@@ -208,8 +205,7 @@ public class SettingsPanel {
         Color textColor = new Color(200, 200, 200, bgAlpha);
         Color valueColor = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), bgAlpha);
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, currentX + PADDING, sliderY, sliderWidth, sliderHeight, sliderRadius, sliderBg);
+        NanoVGRenderer.drawRoundedRect(currentX + PADDING, sliderY, sliderWidth, sliderHeight, sliderRadius, sliderBg);
 
         double range = setting.getMax() - setting.getMin();
         double minPercentage = range > 0 ? (setting.getMinValue() - setting.getMin()) / range : 0;
@@ -219,7 +215,7 @@ public class SettingsPanel {
         float fillWidth = maxX - minX;
 
         if (fillWidth > 0) {
-            ShaderRenderer.drawRect(matrices, currentX + PADDING + minX, sliderY, fillWidth, sliderHeight, sliderRadius,
+            NanoVGRenderer.drawRoundedRect(currentX + PADDING + minX, sliderY, fillWidth, sliderHeight, sliderRadius,
                     sliderFill);
         }
 
@@ -266,8 +262,7 @@ public class SettingsPanel {
                 ? new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), bgAlpha)
                 : new Color(40, 40, 46, bgAlpha);
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, toggleX, toggleY, toggleWidth, toggleHeight, toggleHeight / 2f, toggleBg);
+        NanoVGRenderer.drawRoundedRect(toggleX, toggleY, toggleWidth, toggleHeight, toggleHeight / 2f, toggleBg);
 
         float handleSize = toggleHeight - 4;
         float handleX = isOn
@@ -294,12 +289,11 @@ public class SettingsPanel {
         Color sliderFill = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), bgAlpha);
         Color textColor = new Color(200, 200, 200, bgAlpha);
         Color valueColor = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), bgAlpha);
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, currentX + PADDING, sliderY, sliderWidth, sliderHeight, sliderRadius, sliderBg);
+        NanoVGRenderer.drawRoundedRect(currentX + PADDING, sliderY, sliderWidth, sliderHeight, sliderRadius, sliderBg);
         double percentage = (setting.getValue() - setting.getMin()) / (setting.getMax() - setting.getMin());
         float fillWidth = (float) (sliderWidth * percentage);
         if (fillWidth > 0) {
-            ShaderRenderer.drawRect(matrices, currentX + PADDING, sliderY, fillWidth, sliderHeight, sliderRadius,
+            NanoVGRenderer.drawRoundedRect(currentX + PADDING, sliderY, fillWidth, sliderHeight, sliderRadius,
                     sliderFill);
         }
         float handleRadius = cc.silk.module.modules.client.ClientSettingsModule.getSliderHandleSize();
@@ -344,10 +338,9 @@ public class SettingsPanel {
         float dropdownX = currentX + width - PADDING - dropdownWidth;
         float dropdownY = settingY + 1;
 
-        MatrixStack matrices = new MatrixStack();
         if (!renderDropdownOnly) {
-            ShaderRenderer.drawRect(matrices, dropdownX, dropdownY, dropdownWidth, dropdownHeight, 3f, dropdownBg);
-            ShaderRenderer.drawOutline(matrices, dropdownX, dropdownY, dropdownWidth, dropdownHeight, 3f, dropdownBorder, 1f);
+            NanoVGRenderer.drawRoundedRect(dropdownX, dropdownY, dropdownWidth, dropdownHeight, 3f, dropdownBg);
+            NanoVGRenderer.drawRoundedRectOutline(dropdownX, dropdownY, dropdownWidth, dropdownHeight, 3f, 1f, dropdownBorder);
 
             String arrow = expandedDropdown == setting ? "▲" : "▼";
             float arrowWidth = NanoVGRenderer.getTextWidth(arrow, fontSize);
@@ -380,8 +373,8 @@ public class SettingsPanel {
             Color menuBorder = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(),
                     (int) (150 * alpha));
 
-            ShaderRenderer.drawRect(matrices, dropdownX, menuY, dropdownWidth, menuHeight, 3f, menuBg);
-            ShaderRenderer.drawOutline(matrices, dropdownX, menuY, dropdownWidth, menuHeight, 3f, menuBorder, 1.5f);
+            NanoVGRenderer.drawRoundedRect(dropdownX, menuY, dropdownWidth, menuHeight, 3f, menuBg);
+            NanoVGRenderer.drawRoundedRectOutline(dropdownX, menuY, dropdownWidth, menuHeight, 3f, 1.5f, menuBorder);
 
             float optionY = menuY;
             for (String option : setting.getModes()) {
@@ -390,7 +383,7 @@ public class SettingsPanel {
                 boolean isSelected = option.equals(mode);
 
                 if (isHovered) {
-                    ShaderRenderer.drawRect(matrices, dropdownX + 1, optionY, dropdownWidth - 2, 14, 0, hoverBg);
+                    NanoVGRenderer.drawRect(dropdownX + 1, optionY, dropdownWidth - 2, 14, hoverBg);
                 }
 
                 String displayOption = option;
@@ -424,9 +417,8 @@ public class SettingsPanel {
                 (int) (150 * alpha));
         Color textColor = new Color(200, 200, 200, (int) (255 * alpha));
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, previewX, previewY, previewSize, previewSize, 3f, displayColor);
-        ShaderRenderer.drawOutline(matrices, previewX, previewY, previewSize, previewSize, 3f, border, 1f);
+        NanoVGRenderer.drawRoundedRect(previewX, previewY, previewSize, previewSize, 3f, displayColor);
+        NanoVGRenderer.drawRoundedRectOutline(previewX, previewY, previewSize, previewSize, 3f, 1f, border);
 
         float fontSize = 9f;
         NanoVGRenderer.drawText(setting.getName(), currentX + PADDING, settingY + 3, fontSize, textColor);
@@ -461,9 +453,8 @@ public class SettingsPanel {
                 ? new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), bgAlpha)
                 : new Color(200, 200, 200, bgAlpha);
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, buttonX, buttonY, buttonWidth, buttonHeight, 3f, buttonBg);
-        ShaderRenderer.drawOutline(matrices, buttonX, buttonY, buttonWidth, buttonHeight, 3f, buttonBorder, 1f);
+        NanoVGRenderer.drawRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, 3f, buttonBg);
+        NanoVGRenderer.drawRoundedRectOutline(buttonX, buttonY, buttonWidth, buttonHeight, 3f, 1f, buttonBorder);
 
         float textX = buttonX + (buttonWidth - keyWidth) / 2f;
         NanoVGRenderer.drawText(keyText, textX, buttonY + 2, fontSize, keyColor);
@@ -478,8 +469,8 @@ public class SettingsPanel {
                 ? new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(), bgAlpha)
                 : new Color(200, 200, 200, bgAlpha);
 
-        ShaderRenderer.drawRect(matrices, modeButtonX, modeButtonY, modeButtonWidth, modeButtonHeight, 3f, modeBg);
-        ShaderRenderer.drawOutline(matrices, modeButtonX, modeButtonY, modeButtonWidth, modeButtonHeight, 3f, modeBorder, 1f);
+        NanoVGRenderer.drawRoundedRect(modeButtonX, modeButtonY, modeButtonWidth, modeButtonHeight, 3f, modeBg);
+        NanoVGRenderer.drawRoundedRectOutline(modeButtonX, modeButtonY, modeButtonWidth, modeButtonHeight, 3f, 1f, modeBorder);
 
         float modeTextWidth = NanoVGRenderer.getTextWidth(modeText, fontSize);
         float modeTextX = modeButtonX + (modeButtonWidth - modeTextWidth) / 2f;

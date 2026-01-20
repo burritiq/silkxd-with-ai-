@@ -7,7 +7,6 @@ import cc.silk.gui.newgui.components.ConfigPanel;
 import cc.silk.gui.FriendsScreen;
 import cc.silk.gui.effects.SnowEffect;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
-import cc.silk.utils.render.shader.ShaderRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -222,9 +221,8 @@ public class NewClickGUI extends Screen {
                 Color tooltipBorder = new Color(60, 60, 70, bgAlpha);
                 Color tooltipTextColor = new Color(240, 240, 245, (int) (255 * alpha));
 
-                MatrixStack matrices = new MatrixStack();
-                ShaderRenderer.drawRect(matrices, tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4f, tooltipBg);
-                ShaderRenderer.drawOutline(matrices, tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4f, tooltipBorder, 1f);
+                NanoVGRenderer.drawRoundedRect(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4f, tooltipBg);
+                NanoVGRenderer.drawRoundedRectOutline(tooltipX, tooltipY, tooltipWidth, tooltipHeight, 4f, 1f, tooltipBorder);
                 NanoVGRenderer.drawText(tooltipText, tooltipX + padding, tooltipY + padding, fontSize,
                         tooltipTextColor);
 
@@ -245,11 +243,10 @@ public class NewClickGUI extends Screen {
                 (int) (100 * alpha));
 
         float cornerRadius = 6f;
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, friendsButtonX, friendsButtonY, FRIENDS_BUTTON_SIZE, FRIENDS_BUTTON_SIZE,
+        NanoVGRenderer.drawRoundedRect(friendsButtonX, friendsButtonY, FRIENDS_BUTTON_SIZE, FRIENDS_BUTTON_SIZE,
                 cornerRadius, bgColor);
-        ShaderRenderer.drawOutline(matrices, friendsButtonX, friendsButtonY, FRIENDS_BUTTON_SIZE, FRIENDS_BUTTON_SIZE,
-                cornerRadius, borderColor, 1f);
+        NanoVGRenderer.drawRoundedRectOutline(friendsButtonX, friendsButtonY, FRIENDS_BUTTON_SIZE, FRIENDS_BUTTON_SIZE,
+                cornerRadius, 1f, borderColor);
 
         if (contactIconImage != -1) {
             float iconPadding = 5f;
@@ -275,12 +272,11 @@ public class NewClickGUI extends Screen {
                 searchFocused ? bgAlpha : (int) (100 * alpha));
 
         float cornerRadius = 6f;
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, searchBarX, searchBarY, currentWidth, SEARCH_ICON_SIZE, cornerRadius, bgColor);
+        NanoVGRenderer.drawRoundedRect(searchBarX, searchBarY, currentWidth, SEARCH_ICON_SIZE, cornerRadius, bgColor);
 
         float borderThickness = searchFocused ? 2f : 1f;
-        ShaderRenderer.drawOutline(matrices, searchBarX, searchBarY, currentWidth, SEARCH_ICON_SIZE,
-                cornerRadius, borderColor, borderThickness);
+        NanoVGRenderer.drawRoundedRectOutline(searchBarX, searchBarY, currentWidth, SEARCH_ICON_SIZE,
+                cornerRadius, borderThickness, borderColor);
 
         float iconCenterX = searchBarX + SEARCH_ICON_SIZE / 2f;
         float iconCenterY = searchBarY + SEARCH_ICON_SIZE / 2f;

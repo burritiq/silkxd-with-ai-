@@ -3,7 +3,6 @@ package cc.silk.gui.newgui.components;
 import cc.silk.SilkClient;
 import cc.silk.profiles.ProfileManager;
 import cc.silk.utils.render.nanovg.NanoVGRenderer;
-import cc.silk.utils.render.shader.ShaderRenderer;
 import cc.silk.utils.render.GuiGlowHelper;
 import cc.silk.utils.render.blur.BlurRenderer;
 import net.minecraft.client.gui.DrawContext;
@@ -79,12 +78,11 @@ public class ConfigPanel {
         int totalHeight = HEADER_HEIGHT + (displayedConfigs * CONFIG_ENTRY_HEIGHT);
         boolean scrollable = configs.size() + 1 > MAX_VISIBLE_CONFIGS;
 
-        MatrixStack matrices = new MatrixStack();
-        ShaderRenderer.drawRect(matrices, x, y, width, totalHeight, CORNER_RADIUS, panelBg);
-        ShaderRenderer.drawOutline(matrices, x, y, width, totalHeight, CORNER_RADIUS, borderColor, 1f);
+        NanoVGRenderer.drawRoundedRect(x, y, width, totalHeight, CORNER_RADIUS, panelBg);
+        NanoVGRenderer.drawRoundedRectOutline(x, y, width, totalHeight, CORNER_RADIUS, 1f, borderColor);
 
-        ShaderRenderer.drawRect(matrices, x, y, width, HEADER_HEIGHT, CORNER_RADIUS, headerBg);
-        ShaderRenderer.drawRect(matrices, x, y + HEADER_HEIGHT - CORNER_RADIUS, width, CORNER_RADIUS, 0, headerBg);
+        NanoVGRenderer.drawRoundedRect(x, y, width, HEADER_HEIGHT, CORNER_RADIUS, headerBg);
+        NanoVGRenderer.drawRect(x, y + HEADER_HEIGHT - CORNER_RADIUS, width, CORNER_RADIUS, headerBg);
 
         float iconSize = 12f;
         float iconX = Math.round(x + 6 + iconSize / 2f);
@@ -140,7 +138,7 @@ public class ConfigPanel {
 
             Color scrollbarColor = new Color(accentColor.getRed(), accentColor.getGreen(), accentColor.getBlue(),
                     (int) (100 * alpha));
-            ShaderRenderer.drawRect(matrices, x + width - 3, scrollbarY, 2, scrollbarHeight, 1f, scrollbarColor);
+            NanoVGRenderer.drawRoundedRect(x + width - 3, scrollbarY, 2, scrollbarHeight, 1f, scrollbarColor);
         }
     }
 
