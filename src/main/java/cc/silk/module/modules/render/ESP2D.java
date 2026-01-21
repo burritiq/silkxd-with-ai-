@@ -229,10 +229,7 @@ public class ESP2D extends Module {
                                         float maxHealth = livingEntity.getMaxHealth();
                                         float healthPercent = Math.min(health / maxHealth, 1f);
 
-                                        float boxWidth = endPosX - posX;
-                                        float maxBarWidth = 3.5f;
-                                        float barWidth = Math.min(2.5f, boxWidth * 0.08f);
-                                        barWidth = Math.min(barWidth, maxBarWidth);
+                                        float barWidth = 1.5f;
 
                                         float barHeight = endPosY - posY;
                                         float barX = posX - barWidth - 3f;
