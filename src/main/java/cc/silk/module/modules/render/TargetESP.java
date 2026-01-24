@@ -5,7 +5,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import cc.silk.event.impl.render.Render3DEvent;
 import cc.silk.module.Category;
 import cc.silk.module.Module;
-import cc.silk.module.setting.BooleanSetting;
 import cc.silk.module.setting.ColorSetting;
 import cc.silk.module.setting.ModeSetting;
 import cc.silk.module.setting.NumberSetting;

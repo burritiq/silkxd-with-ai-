@@ -14,6 +14,9 @@ import static org.lwjgl.nanovg.NanoVG.*;
 import static org.lwjgl.system.MemoryStack.stackPush;
 
 public final class NVGImage {
+    private static final float COLOR_DIVISOR = 255f;
+    private static final Color DEFAULT_TINT = new Color(255, 255, 255, 255);
+    private static final int INITIAL_BUFFER_SIZE = 8192;
     
     private NVGImage() {}
     
@@ -33,7 +36,7 @@ public final class NVGImage {
                 return -1;
             }
 
-            buffer = MemoryUtil.memAlloc(8192);
+            buffer = MemoryUtil.memAlloc(INITIAL_BUFFER_SIZE);
             ReadableByteChannel rbc = Channels.newChannel(is);
 
             while (rbc.read(buffer) != -1) {
@@ -69,7 +72,7 @@ public final class NVGImage {
         long vg = NVGRenderer.getContext();
         nvgSave(vg);
         try (MemoryStack stack = stackPush()) {
-            float alpha = tint.getAlpha() / 255f;
+            float alpha = tint.getAlpha() / COLOR_DIVISOR;
 
             NVGPaint paint = nvgImagePattern(vg, x, y, width, height, 0, imageId, alpha, NVGPaint.malloc(stack));
 
@@ -83,6 +86,6 @@ public final class NVGImage {
     }
     
     public static void drawImage(int imageId, float x, float y, float width, float height) {
-        drawImage(imageId, x, y, width, height, new Color(255, 255, 255, 255));
+        drawImage(imageId, x, y, width, height, DEFAULT_TINT);
     }
 }

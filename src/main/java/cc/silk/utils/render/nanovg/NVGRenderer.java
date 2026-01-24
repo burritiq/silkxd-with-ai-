@@ -13,16 +13,22 @@ import static org.lwjgl.nanovg.NanoVGGL3.*;
 
 public final class NVGRenderer {
     private static final MinecraftClient mc = MinecraftClient.getInstance();
+    private static final float COLOR_DIVISOR = 255f;
     
     private static final long VG = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
     
     public static final NVGPaint NVG_PAINT = NVGPaint.create();
     public static final NVGColor NVG_COLOR_1 = NVGColor.create();
     public static final NVGColor NVG_COLOR_2 = NVGColor.create();
+    private static final NVGColor NVG_TRANSPARENT = NVGColor.create();
     
     private static boolean frameStarted = false;
     private static boolean initialized = false;
     public static float globalAlpha = 1.0f;
+    
+    static {
+        nvgRGBAf(0, 0, 0, 0, NVG_TRANSPARENT);
+    }
     
     private NVGRenderer() {}
     
@@ -167,9 +173,8 @@ public final class NVGRenderer {
                                                    float radius, Color color, Color shadowColor,
                                                    float shadowBlur, float shadowSpread) {
         applyColor(shadowColor, NVG_COLOR_1);
-        NVGColor transparent = NVGColor.create();
-        nvgRGBAf(0, 0, 0, 0, transparent);
-        nvgBoxGradient(VG, x, y, width, height, radius, shadowBlur, NVG_COLOR_1, transparent, NVG_PAINT);
+        // Reuse pre-allocated transparent color instead of creating new one
+        nvgBoxGradient(VG, x, y, width, height, radius, shadowBlur, NVG_COLOR_1, NVG_TRANSPARENT, NVG_PAINT);
         
         nvgBeginPath(VG);
         nvgFillPaint(VG, NVG_PAINT);
@@ -211,10 +216,10 @@ public final class NVGRenderer {
     
     public static void applyColor(Color color, NVGColor nvgColor) {
         nvgRGBAf(
-            color.getRed() / 255f,
-            color.getGreen() / 255f,
-            color.getBlue() / 255f,
-            color.getAlpha() / 255f,
+            color.getRed() / COLOR_DIVISOR,
+            color.getGreen() / COLOR_DIVISOR,
+            color.getBlue() / COLOR_DIVISOR,
+            color.getAlpha() / COLOR_DIVISOR,
             nvgColor
         );
     }

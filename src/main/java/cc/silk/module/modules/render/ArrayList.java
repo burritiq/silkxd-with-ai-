@@ -14,68 +14,42 @@ import java.util.Comparator;
 import java.util.List;
 
 public class ArrayList extends Module {
-    private final ModeSetting position = new ModeSetting("Position", "Top Right", "Top Left", "Top Right",
-            "Bottom Left", "Bottom Right");
-    private final ModeSetting sortMode = new ModeSetting("Sort", "Length", "Length", "Alphabetical");
-    private final ModeSetting font = new ModeSetting("Font", "Inter", "Inter", "JetBrains Mono", "Poppins", "Monaco");
-    private final NumberSetting fontSize = new NumberSetting("Font Size", 8, 24, 14, 1);
-    private final NumberSetting padding = new NumberSetting("Padding", 2, 10, 4, 1);
-    private final NumberSetting spacing = new NumberSetting("Spacing", 0, 5, 2, 1);
-    private final NumberSetting xOffset = new NumberSetting("X Offset", 0, 50, 5, 1);
-    private final NumberSetting yOffset = new NumberSetting("Y Offset", 0, 50, 5, 1);
-    private final ModeSetting bgColorMode = new ModeSetting("BG Color", "Dark Gray", "Dark Gray", "Black",
-            "Matt Black");
-    private final NumberSetting bgAlpha = new NumberSetting("BG Alpha", 0, 255, 150, 1);
-    private final NumberSetting cornerRadius = new NumberSetting("Corner Radius", 0, 10, 3, 0.5);
-    private final BooleanSetting showBackground = new BooleanSetting("Background", true);
-    private final BooleanSetting showBar = new BooleanSetting("Side Bar", true);
-    private final NumberSetting barWidth = new NumberSetting("Bar Width", 1, 5, 2, 0.5);
-    private final BooleanSetting showOutline = new BooleanSetting("Outline", true);
-    private final NumberSetting outlineWidth = new NumberSetting("Outline Width", 0.5, 3, 1, 0.5);
-    private final BooleanSetting showSuffix = new BooleanSetting("Show Suffix", true);
-    private final BooleanSetting animations = new BooleanSetting("Animations", true);
-    private final NumberSetting animationSpeed = new NumberSetting("Animation Speed", 0.1, 10.0, 5.0, 0.1);
-    private final ModeSetting colorMode = new ModeSetting("Color Mode", "Theme", "Theme", "Gradient", "Custom");
-    private final ColorSetting customColor = new ColorSetting("Custom Color", new Color(255, 100, 100));
-    private final ColorSetting gradientColor = new ColorSetting("Gradient Color", new Color(100, 150, 255));
-    private final NumberSetting gradientSpeed = new NumberSetting("Gradient Speed", 0.1, 5.0, 1.5, 0.1);
-    private final NumberSetting gradientSpread = new NumberSetting("Gradient Spread", 0.1, 5.0, 0.6, 0.1);
-
-    private final java.util.Map<String, ModuleAnimation> moduleAnimations = new java.util.HashMap<>();
+    private static final float PADDING = 4f;
+    private static final float MARGIN = 5f;
+    private static final float CORNER_RADIUS = 3f;
+    private static final float WIDTH_TOLERANCE = 0.5f;
+    private static final Color TEXT_COLOR = new Color(255, 255, 255, 255);
+    private static final Color BACKGROUND_BASE = new Color(20, 20, 25);
+    
+    private final ModeSetting position;
+    private final NumberSetting fontSize;
+    private final NumberSetting bgAlpha;
+    private final BooleanSetting rounded;
+    private final NumberSetting barWidth;
+    private final BooleanSetting textShadow;
 
     public ArrayList() {
         super("ArrayList", "Displays enabled modules", -1, Category.RENDER);
-        addSettings(position, sortMode, font, fontSize, padding, spacing, xOffset, yOffset,
-                showBackground, bgColorMode, bgAlpha, cornerRadius, showBar, barWidth,
-                showOutline, outlineWidth, showSuffix, animations, animationSpeed,
-                colorMode, customColor, gradientColor, gradientSpeed, gradientSpread);
+        
+        this.position = new ModeSetting("Position", "Top Right", "Top Left", "Top Right");
+        this.fontSize = new NumberSetting("Font Size", 8, 24, 14, 1);
+        this.bgAlpha = new NumberSetting("BG Alpha", 0, 255, 150, 1);
+        this.rounded = new BooleanSetting("Rounded", true);
+        this.barWidth = new NumberSetting("Bar Width", 1, 5, 2, 0.5);
+        this.textShadow = new BooleanSetting("Text Shadow", true);
+        
+        addSettings(position, fontSize, bgAlpha, rounded, barWidth, textShadow);
     }
 
     @EventHandler
     private void onRender2D(Render2DEvent event) {
-        if (mc.player == null || mc.world == null)
+        if (!shouldRender()) {
             return;
-        if (mc.currentScreen != null && !(mc.currentScreen instanceof ChatScreen))
-            return;
-
-        List<Module> enabledModules = SilkClient.INSTANCE.getModuleManager().getEnabledModules();
-
-        if (animations.getValue()) {
-            updateAnimations(enabledModules);
         }
 
-        if (enabledModules.isEmpty() && moduleAnimations.isEmpty())
+        List<Module> sortedModules = getSortedEnabledModules();
+        if (sortedModules.isEmpty()) {
             return;
-
-        List<Module> sortedModules = new java.util.ArrayList<>(enabledModules);
-        int fontId = getFontId();
-        if (sortMode.getMode().equals("Length")) {
-            sortedModules.sort(Comparator
-                    .comparingDouble(
-                            m -> -NanoVGRenderer.getTextWidthWithFont(getModuleDisplayText(m),
-                                    (float) fontSize.getValue(), fontId)));
-        } else {
-            sortedModules.sort(Comparator.comparing(Module::getName));
         }
 
         NanoVGRenderer.beginFrame();
@@ -83,271 +57,177 @@ public class ArrayList extends Module {
         NanoVGRenderer.endFrame();
     }
 
+    private boolean shouldRender() {
+        return mc.player != null 
+            && mc.world != null 
+            && (mc.currentScreen == null || mc.currentScreen instanceof ChatScreen);
+    }
+
+    private List<Module> getSortedEnabledModules() {
+        List<Module> enabledModules = SilkClient.INSTANCE.getModuleManager().getEnabledModules();
+        List<Module> sortedModules = new java.util.ArrayList<>(enabledModules);
+        
+        float currentFontSize = (float) fontSize.getValue();
+        sortedModules.sort(Comparator.comparingDouble(
+            module -> -NanoVGRenderer.getTextWidth(module.getName(), currentFontSize)
+        ));
+        
+        return sortedModules;
+    }
+
     private void renderModuleList(List<Module> modules) {
-        int screenWidth = mc.getWindow().getScaledWidth();
-        int screenHeight = mc.getWindow().getScaledHeight();
-
-        float size = (float) fontSize.getValue();
-        float pad = (float) padding.getValue();
-        float gap = (float) spacing.getValue();
-        float xOff = (float) xOffset.getValue();
-        float yOff = (float) yOffset.getValue();
-        float radius = (float) cornerRadius.getValue();
-        float barW = (float) barWidth.getValue();
-
-        String pos = position.getMode();
-        boolean isRight = pos.contains("Right");
-        boolean isBottom = pos.contains("Bottom");
-
-        float currentY = isBottom ? screenHeight - yOff : yOff;
-        float previousWidth = 0;
-
-        List<String> modulesToRender = new java.util.ArrayList<>();
-        for (Module m : modules) {
-            modulesToRender.add(m.getName());
-        }
-        if (animations.getValue()) {
-            for (String name : moduleAnimations.keySet()) {
-                if (!modulesToRender.contains(name)) {
-                    modulesToRender.add(name);
-                }
-            }
-        }
-
-        for (int i = 0; i < modulesToRender.size(); i++) {
-            String moduleName = modulesToRender.get(i);
-            Module module = modules.stream().filter(m -> m.getName().equals(moduleName)).findFirst().orElse(null);
-
-            if (module == null && !animations.getValue())
-                continue;
-
-            String displayText = module != null ? getModuleDisplayText(module) : moduleName;
-
-            float animProgress = 1.0f;
-            if (animations.getValue()) {
-                ModuleAnimation anim = moduleAnimations.get(moduleName);
-                if (anim != null) {
-                    animProgress = anim.progress;
-                    if (animProgress <= 0)
-                        continue;
-                }
-            }
-
-            int fontId = getFontId();
-            float textWidth = NanoVGRenderer.getTextWidthWithFont(displayText, size, fontId);
-            float textHeight = NanoVGRenderer.getTextHeight(size);
-            float bgWidth = textWidth + pad * 2;
-            float bgHeight = textHeight + pad * 2;
-
-            float animatedWidth = bgWidth * animProgress;
-
-            float x = isRight ? screenWidth - animatedWidth - xOff : xOff;
-            float y = isBottom ? currentY - bgHeight : currentY;
-
-            if (showBackground.getValue()) {
-                int alpha = (int) (bgAlpha.getValue() * animProgress);
-                Color bgColor = switch (bgColorMode.getMode()) {
-                    case "Black" -> new Color(0, 0, 0, alpha);
-                    case "Matt Black" -> new Color(10, 10, 10, alpha);
-                    default -> new Color(20, 20, 25, alpha);
-                };
-
-                NanoVGRenderer.drawRoundedRect(x, y, animatedWidth, bgHeight, radius, bgColor);
-            }
-
-            if (showOutline.getValue() && animProgress > 0.1f) {
-                Color outlineColor = getModuleColor(i, modules.size());
-                outlineColor = new Color(outlineColor.getRed(), outlineColor.getGreen(),
-                        outlineColor.getBlue(), (int) (outlineColor.getAlpha() * animProgress));
-                float outlineW = (float) outlineWidth.getValue();
-
-                if (radius > 0) {
-                    NanoVGRenderer.drawRoundedRectOutline(x, y, animatedWidth, bgHeight, radius, outlineW,
-                            outlineColor);
-                } else {
-                    if (isRight) {
-                        if (i == 0) {
-                            NanoVGRenderer.drawLine(x, y, x + animatedWidth, y, outlineW, outlineColor);
-                        }
-
-                        NanoVGRenderer.drawLine(x, y, x, y + bgHeight, outlineW, outlineColor);
-
-                        if (i > 0 && previousWidth != animatedWidth) {
-                            float prevX = screenWidth - previousWidth - xOff;
-                            NanoVGRenderer.drawLine(x, y, prevX, y, outlineW, outlineColor);
-                        }
-
-                        if (i == modules.size() - 1) {
-                            NanoVGRenderer.drawLine(x, y + bgHeight, x + animatedWidth, y + bgHeight, outlineW,
-                                    outlineColor);
-                        }
-
-                        NanoVGRenderer.drawLine(x + animatedWidth, y, x + animatedWidth, y + bgHeight, outlineW,
-                                outlineColor);
-                    } else {
-                        if (i == 0) {
-                            NanoVGRenderer.drawLine(x, y, x + animatedWidth, y, outlineW, outlineColor);
-                        }
-
-                        NanoVGRenderer.drawLine(x, y, x, y + bgHeight, outlineW, outlineColor);
-
-                        NanoVGRenderer.drawLine(x + animatedWidth, y, x + animatedWidth, y + bgHeight, outlineW,
-                                outlineColor);
-
-                        if (i > 0 && previousWidth != animatedWidth) {
-                            float prevX = xOff + previousWidth;
-                            NanoVGRenderer.drawLine(prevX, y, x + animatedWidth, y, outlineW, outlineColor);
-                        }
-
-                        if (i == modules.size() - 1) {
-                            NanoVGRenderer.drawLine(x, y + bgHeight, x + animatedWidth, y + bgHeight, outlineW,
-                                    outlineColor);
-                        }
-                    }
-                }
-            }
-
-            if (showBar.getValue()) {
-                Color barColor = getModuleColor(i, modules.size());
-                barColor = new Color(barColor.getRed(), barColor.getGreen(),
-                        barColor.getBlue(), (int) (barColor.getAlpha() * animProgress));
-                if (isRight) {
-                    NanoVGRenderer.drawRoundedRect(x + animatedWidth - barW, y, barW, bgHeight,
-                            radius, barColor);
-                } else {
-                    NanoVGRenderer.drawRoundedRect(x, y, barW, bgHeight, radius, barColor);
-                }
-            }
-
-            NanoVGRenderer.scissor(x, y, animatedWidth, bgHeight);
-
-            if (colorMode.getMode().equals("Gradient")) {
-                drawGradientText(displayText, x + pad + (isRight ? 0 : (showBar.getValue() ? barW : 0)),
-                        y + pad, size, animProgress, fontId);
-            } else {
-                Color textColor = getModuleColor(i, modules.size());
-                textColor = new Color(textColor.getRed(), textColor.getGreen(),
-                        textColor.getBlue(), (int) (textColor.getAlpha() * animProgress));
-                float textX = x + pad + (isRight ? 0 : (showBar.getValue() ? barW : 0));
-                float textY = y + pad;
-                NanoVGRenderer.drawTextWithFont(displayText, textX, textY, size, textColor, fontId);
-            }
-
-            NanoVGRenderer.resetScissor();
-
-            previousWidth = animatedWidth;
-            if (isBottom) {
-                currentY -= bgHeight + gap;
-            } else {
-                currentY += bgHeight + gap;
-            }
+        RenderContext context = new RenderContext();
+        
+        for (int i = 0; i < modules.size(); i++) {
+            ModuleEntry entry = new ModuleEntry(modules, i, context);
+            renderModuleEntry(entry, context);
         }
     }
 
-    private Color getModuleColor(int index, int total) {
-        return switch (colorMode.getMode()) {
-            case "Custom" -> customColor.getValue();
-            case "Gradient" -> getGradientColor(index);
-            default -> cc.silk.module.modules.client.NewClickGUIModule.getAccentColor();
-        };
+    private void renderModuleEntry(ModuleEntry entry, RenderContext context) {
+        renderBackground(entry, context);
+        renderSideBar(entry, context);
+        renderText(entry, context);
+        
+        context.currentY += entry.bgHeight;
     }
 
-    private Color getGradientColor(int index) {
-        double time = (System.currentTimeMillis() / 1000.0) * gradientSpeed.getValue();
-        double phase = time + index * gradientSpread.getValue();
-        double waveValue = (Math.sin(phase) + 1.0) * 0.5;
-        double wave = Math.sin(waveValue * Math.PI * 0.5);
-        return new Color(applyWaveColor(gradientColor.getValue().getRGB(), wave, 1.0f), true);
-    }
-
-    private String getModuleDisplayText(Module module) {
-        String name = module.getName();
-        if (!showSuffix.getValue()) {
-            return name;
-        }
-
-        NumberSetting numberSetting = null;
-        for (Setting setting : module.getSettings()) {
-            if (setting instanceof NumberSetting) {
-                numberSetting = (NumberSetting) setting;
-                break;
-            }
-        }
-
-        if (numberSetting == null) {
-            return name;
-        }
-
-        double value = numberSetting.getValue();
-        String formattedValue;
-        if (value == (long) value) {
-            formattedValue = String.format("%d", (long) value);
+    private void renderBackground(ModuleEntry entry, RenderContext context) {
+        // Round corners at width transitions and list boundaries
+        if (context.isRounded && entry.needsRounding()) {
+            drawRoundedBackground(entry, context);
         } else {
-            formattedValue = String.format("%.1f", value);
+            NanoVGRenderer.drawRect(entry.x, entry.y, entry.bgWidth, entry.bgHeight, context.bgColor);
         }
-
-        return name + " [" + formattedValue + "]";
     }
 
-    private void updateAnimations(List<Module> enabledModules) {
-        float delta = (float) (animationSpeed.getValue() * 0.016);
-
-        for (Module module : enabledModules) {
-            moduleAnimations.putIfAbsent(module.getName(), new ModuleAnimation());
-        }
-
-        moduleAnimations.entrySet().removeIf(entry -> {
-            ModuleAnimation anim = entry.getValue();
-            boolean isEnabled = enabledModules.stream().anyMatch(m -> m.getName().equals(entry.getKey()));
-
-            if (isEnabled) {
-                anim.progress = Math.min(1.0f, anim.progress + delta);
-            } else {
-                anim.progress = Math.max(0.0f, anim.progress - delta);
+    private void drawRoundedBackground(ModuleEntry entry, RenderContext context) {
+        // Only round corners where width actually changes (gets narrower)
+        if (context.isRightAligned) {
+            float topLeft = 0, topRight = 0, bottomRight = 0, bottomLeft = 0;
+            
+            // Round top if first OR this item is narrower than previous
+            if (entry.isFirst || entry.isNarrowerThanPrev) {
+                topLeft = CORNER_RADIUS;
             }
-
-            return anim.progress <= 0 && !isEnabled;
-        });
-    }
-
-    private void drawGradientText(String text, float x, float y, float size, float alpha, int fontId) {
-        double time = (System.currentTimeMillis() / 1000.0) * gradientSpeed.getValue();
-        float cursorX = x;
-
-        Color baseColor = gradientColor.getValue();
-
-        for (int i = 0; i < text.length(); i++) {
-            String ch = String.valueOf(text.charAt(i));
-            double phase = time + i * gradientSpread.getValue();
-            double waveValue = (Math.sin(phase) + 1.0) * 0.5;
-            double wave = Math.sin(waveValue * Math.PI * 0.5);
-
-            int waved = applyWaveColor(baseColor.getRGB(), wave, alpha);
-            NanoVGRenderer.drawTextWithFont(ch, cursorX, y, size, new Color(waved, true), fontId);
-            cursorX += NanoVGRenderer.getTextWidthWithFont(ch, size, fontId);
+            // Round bottom if last OR next item is narrower than this
+            if (entry.isLast || entry.isWiderThanNext) {
+                bottomLeft = CORNER_RADIUS;
+            }
+            
+            NanoVGRenderer.drawRoundedRectVarying(
+                entry.x, entry.y, entry.bgWidth, entry.bgHeight, 
+                topLeft, topRight, bottomRight, bottomLeft, 
+                context.bgColor
+            );
+        } else {
+            float topLeft = 0, topRight = 0, bottomRight = 0, bottomLeft = 0;
+            
+            // Round top if first OR this item is narrower than previous
+            if (entry.isFirst || entry.isNarrowerThanPrev) {
+                topRight = CORNER_RADIUS;
+            }
+            // Round bottom if last OR next item is narrower than this
+            if (entry.isLast || entry.isWiderThanNext) {
+                bottomRight = CORNER_RADIUS;
+            }
+            
+            NanoVGRenderer.drawRoundedRectVarying(
+                entry.x, entry.y, entry.bgWidth, entry.bgHeight, 
+                topLeft, topRight, bottomRight, bottomLeft, 
+                context.bgColor
+            );
         }
     }
 
-    private int getFontId() {
-        return switch (font.getMode()) {
-            case "JetBrains Mono" -> NanoVGRenderer.getJetBrainsFontId();
-            case "Poppins" -> NanoVGRenderer.getPoppinsFontId();
-            case "Monaco" -> NanoVGRenderer.getMonacoFontId();
-            default -> NanoVGRenderer.getRegularFontId();
-        };
+    private void renderSideBar(ModuleEntry entry, RenderContext context) {
+        float barX = context.isRightAligned ? entry.x + entry.bgWidth - context.barWidth : entry.x;
+        
+        // Sidebar always sharp - no rounding
+        NanoVGRenderer.drawRect(barX, entry.y, context.barWidth, entry.bgHeight, context.accentColor);
     }
 
-    private int applyWaveColor(int baseColor, double waveValue, float alpha) {
-        Color base = new Color(baseColor, true);
-        double wave = Math.pow(waveValue, 0.5);
-        int r = (int) (base.getRed() + (255 - base.getRed()) * wave);
-        int g = (int) (base.getGreen() + (255 - base.getGreen()) * wave);
-        int b = (int) (base.getBlue() + (255 - base.getBlue()) * wave);
-        int a = (int) (255 * alpha);
-        return (a << 24) | (r << 16) | (g << 8) | b;
+    private void renderText(ModuleEntry entry, RenderContext context) {
+        float textX = entry.x + PADDING + (context.isRightAligned ? 0 : context.barWidth);
+        float textY = entry.y + PADDING;
+        
+        if (textShadow.getValue()) {
+            NanoVGRenderer.drawTextWithShadow(entry.displayText, textX, textY, context.fontSize, TEXT_COLOR);
+        } else {
+            NanoVGRenderer.drawText(entry.displayText, textX, textY, context.fontSize, TEXT_COLOR);
+        }
     }
 
-    private static class ModuleAnimation {
-        float progress = 0.0f;
+    private class RenderContext {
+        final int screenWidth;
+        final float fontSize;
+        final float barWidth;
+        final boolean isRightAligned;
+        final boolean isRounded;
+        final Color accentColor;
+        final Color bgColor;
+        float currentY;
+
+        RenderContext() {
+            this.screenWidth = mc.getWindow().getScaledWidth();
+            this.fontSize = (float) ArrayList.this.fontSize.getValue();
+            this.barWidth = (float) ArrayList.this.barWidth.getValue();
+            this.isRightAligned = position.getMode().contains("Right");
+            this.isRounded = rounded.getValue();
+            this.accentColor = cc.silk.module.modules.client.NewClickGUIModule.getAccentColor();
+            this.bgColor = new Color(BACKGROUND_BASE.getRed(), BACKGROUND_BASE.getGreen(), 
+                                     BACKGROUND_BASE.getBlue(), (int) bgAlpha.getValue());
+            this.currentY = MARGIN;
+        }
+    }
+
+    private class ModuleEntry {
+        final String displayText;
+        final float textWidth;
+        final float textHeight;
+        final float bgWidth;
+        final float bgHeight;
+        final float x;
+        final float y;
+        final boolean isFirst;
+        final boolean isLast;
+        final boolean isNarrowerThanPrev;
+        final boolean isWiderThanNext;
+
+        ModuleEntry(List<Module> modules, int index, RenderContext context) {
+            Module module = modules.get(index);
+            this.displayText = module.getName();
+            this.textWidth = NanoVGRenderer.getTextWidth(displayText, context.fontSize);
+            this.textHeight = NanoVGRenderer.getTextHeight(context.fontSize);
+            this.bgWidth = textWidth + PADDING * 2;
+            this.bgHeight = textHeight + PADDING * 2;
+            this.x = context.isRightAligned ? context.screenWidth - bgWidth - MARGIN : MARGIN;
+            this.y = context.currentY;
+            this.isFirst = index == 0;
+            this.isLast = index == modules.size() - 1;
+            this.isNarrowerThanPrev = !isFirst && isNarrowerThan(modules.get(index - 1), context);
+            this.isWiderThanNext = !isLast && isWiderThan(modules.get(index + 1), context);
+        }
+
+        private boolean isNarrowerThan(Module other, RenderContext context) {
+            float otherTextWidth = NanoVGRenderer.getTextWidth(other.getName(), context.fontSize);
+            float otherBgWidth = otherTextWidth + PADDING * 2;
+            return bgWidth < otherBgWidth - WIDTH_TOLERANCE;
+        }
+
+        private boolean isWiderThan(Module other, RenderContext context) {
+            float otherTextWidth = NanoVGRenderer.getTextWidth(other.getName(), context.fontSize);
+            float otherBgWidth = otherTextWidth + PADDING * 2;
+            return bgWidth > otherBgWidth + WIDTH_TOLERANCE;
+        }
+
+        boolean shouldRoundCorner() {
+            // Round if first, last, OR width changes (narrower than prev OR wider than next)
+            return isFirst || isLast || isNarrowerThanPrev || isWiderThanNext;
+        }
+        
+        boolean needsRounding() {
+            return shouldRoundCorner();
+        }
     }
 }
