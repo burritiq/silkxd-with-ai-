@@ -138,7 +138,7 @@ public final class NVGRenderer {
         applyColor(color1, NVG_COLOR_1);
         applyColor(color2, NVG_COLOR_2);
         
-        nvgLinearGradient(VG, x, y, x, y + height, NVG_COLOR_1, NVG_COLOR_2, NVG_PAINT);
+        nvgLinearGradient(VG, x, y, x + width, y, NVG_COLOR_1, NVG_COLOR_2, NVG_PAINT);
         
         nvgBeginPath(VG);
         nvgFillPaint(VG, NVG_PAINT);
