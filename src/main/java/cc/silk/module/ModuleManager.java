@@ -60,8 +60,9 @@ public final class ModuleManager {
                 new ShieldBreaker(), new ThrowPot(), new ElytraHotSwap(),
                 new AntiMiss(), new WTap(), new STap(),
                 new AimAssist(), new SwordHotSwap(), new AutoCrystal(), new SwordSwap(), new BreachSwap(),
-                new KeyCrystal(), new KeyAnchor(), new KeyLava(), new AutoPot(), //new StunCob(),
-                new AutoCart(), new CrystalOptimizer(), new Criticals(), new XbowCart(), new Hitboxes());
+                new KeyCrystal(), new KeyAnchor(), new KeyLava(), new AutoPot(), // new StunCob(),
+                new AutoCart(), new CrystalOptimizer(), new Criticals(), new XbowCart(), new Hitboxes(),
+                new DoubleAnchor(), new KnockbackDisplacement(), new SilentAim());
         // Movement
         add(new Sprint(), new AutoFirework(), new AutoHeadHitter(), new KeepSprint(), new SnapTap());
 
@@ -76,14 +77,15 @@ public final class ModuleManager {
         add(
                 new ContainerSlots(), new FullBright(), new Watermark(), new TargetHUD(),
                 new SwingSpeed(),
-                new Notifications(), new ArrowESP(), new OutlineESP(), new CustomOutlineESP(), new ESP2D(), new ESP3D(), new TargetESP(),
+                new Notifications(), new ArrowESP(), new OutlineESP(), new CustomOutlineESP(), new ESP2D(), new ESP3D(),
+                new TargetESP(),
                 new ArrayList(), new Trajectories(), new BlurTest(), new AspectRatio(), new Nametags());
 
         // Misc
         add(
                 new CartKey(), new HoverTotem(), new MiddleClickFriend(),
                 new PearlKey(), new PearlCatch(), new WindChargeKey(), new Teams(), new FakePlayer(),
-                new Friends());
+                new Friends(), new SuperInstaMine());
 
         // Client
         add(new NewClickGUIModule(), new ClientSettingsModule(), new Client(), new Debugger(),
