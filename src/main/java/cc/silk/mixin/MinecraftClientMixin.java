@@ -5,6 +5,7 @@ import cc.silk.event.impl.input.HandleInputEvent;
 import cc.silk.event.impl.network.DisconnectEvent;
 import cc.silk.event.impl.player.DoAttackEvent;
 import cc.silk.event.impl.player.ItemUseEvent;
+import cc.silk.module.modules.combat.KeyAnchor;
 import cc.silk.utils.IMinecraft;
 import cc.silk.event.impl.player.TickEvent;
 import cc.silk.event.impl.world.WorldChangeEvent;
@@ -12,12 +13,20 @@ import cc.silk.gui.ClickGui;
 import cc.silk.module.modules.client.ClickGUIModule;
 import cc.silk.module.modules.client.Client;
 import cc.silk.profiles.ProfileManager;
+import net.minecraft.block.Block;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.RespawnAnchorBlock;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.CompiledShader;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayerInteractionManager;
 import net.minecraft.client.render.RenderTickCounter;
+import net.minecraft.client.util.Window;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.item.Items;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
+import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -41,6 +50,20 @@ public class MinecraftClientMixin implements IMinecraft {
     @Final
     private RenderTickCounter.Dynamic renderTickCounter;
 
+    @Inject(method = "tick", at = @At("HEAD"))
+    private void silk$anchorAirplaceTick(CallbackInfo ci) {
+        if (this.world != null) {
+            if (this.crosshairTarget instanceof BlockHitResult blockHit
+                    && this.player.getMainHandStack().isOf(Items.RESPAWN_ANCHOR)) {
+                Block block = this.world.getBlockState(blockHit.getBlockPos()).getBlock();
+
+                // Check if KeyAnchor module wants airplace enabled
+                if (KeyAnchor.shouldAllowAirplace() && block == Blocks.AIR) {
+                    // Allow placement in air by doing nothing (don't block the interaction)
+                }
+            }
+        }
+    }
     @Inject(method = "getWindowTitle", at = @At("HEAD"), cancellable = true)
     public void setTitle(CallbackInfoReturnable<String> cir) {
         if (SilkClient.INSTANCE == null || SilkClient.mc == null) return;
